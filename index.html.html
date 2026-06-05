@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Formación 2026 — AESA</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f0e8;color:#1a1410;min-height:100vh}
+@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
+#overlay{position:fixed;inset:0;background:#f5f0e8;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:12px}
+#overlay p{font-size:13px;font-weight:600;color:#1a1410}
+#overlay span{font-size:11px;color:#5a5048}
+.loader-bar{width:120px;height:4px;background:#c8bfb0;border-radius:2px;overflow:hidden}
+.loader-inner{height:100%;width:40%;background:#1a1410;border-radius:2px;animation:slide 1.2s infinite ease-in-out}
+.nav{display:flex;border-bottom:1px solid #c8bfb0;background:#f5f0e8;position:sticky;top:0;z-index:100}
+.nav-btn{flex:1;padding:13px 8px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border:none;background:transparent;color:#7a6e62;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.nav-btn.active{color:#1a1410;border-bottom-color:#1a1410}
+.nav-btn:hover:not(.active){color:#3a3028}
+.view{display:none;padding:1.25rem 1rem 3rem}
+.view.active{display:block}
+.sec-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#3a3028;margin-bottom:10px}
+.section{margin-bottom:1.75rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.card{background:#e8e2d8;border:1px solid #c8bfb0;border-radius:10px;padding:.9rem 1.1rem}
+.metric-lbl{font-size:10px;font-weight:500;color:#5a5048;margin-bottom:3px}
+.metric-val{font-size:22px;font-weight:700;color:#1a1410;line-height:1}
+.metric-sub{font-size:10px;color:#6b5e52;margin-top:3px}
+.av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.av-m{background:#b8deca;color:#0d3d22}
+.av-s{background:#c4bef0;color:#1e1060}
+.phead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pname{font-size:13px;font-weight:700;color:#1a1410}
+.prole{font-size:10px;color:#5a5048}
+.pstats{display:flex;gap:14px;margin-bottom:8px}
+.psv{font-size:16px;font-weight:700;color:#1a1410}
+.psl{font-size:9px;color:#5a5048;font-weight:500}
+.sbar{display:flex;height:7px;border-radius:3px;overflow:hidden;margin-bottom:5px}
+.bleg{display:flex;gap:8px;flex-wrap:wrap}
+.bli{display:flex;align-items:center;gap:3px;font-size:9px;color:#3a3028;font-weight:500}
+.bldot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal-day{background:#e8e2d8;border:1px solid #c8bfb0;border-radius:8px;min-height:95px;padding:6px}
+.cal-day.today{border-color:#1a3a6b;border-width:2px}
+.cal-dh{font-size:9px;color:#6b5e52;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.cal-dn{font-size:15px;font-weight:700;color:#1a1410;margin-bottom:4px}
+.ct{font-size:9px;padding:2px 5px;border-radius:3px;margin-bottom:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:1.4}
+.ct-m{background:#1a5c3a;color:#fff}
+.ct-s{background:#1e1060;color:#fff}
+.ct-sh{background:#7a4e00;color:#fff}
+.cal-leg{display:flex;gap:12px;margin-bottom:8px}
+.cal-leg span{display:flex;align-items:center;gap:4px;font-size:11px;color:#1a1410;font-weight:500}
+.ldot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.fbtn{font-size:10px;padding:3px 10px;border-radius:20px;border:1px solid #c0b8a8;background:transparent;color:#3a3028;cursor:pointer;font-weight:500}
+.fbtn.active{background:#1a1410;color:#f5f0e8;border-color:#1a1410}
+.frow{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+.trow{display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid #d0c8b8;font-size:11px}
+.trow:last-child{border-bottom:none}
+.tname{flex:1;color:#1a1410;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.tname a{color:#1a2a4a;text-decoration:none;font-weight:500}
+.tname a:hover{text-decoration:underline}
+.badge{font-size:9px;padding:2px 7px;border-radius:20px;white-space:nowrap;flex-shrink:0;font-weight:600}
+.b-urgent{background:#f0c0c0;color:#6b0f0f}
+.b-high{background:#f0d8b8;color:#6b2e05}
+.b-normal{background:#b8d4f5;color:#0f3572}
+.b-low{background:#d9d0c3;color:#3a3028}
+.b-none{background:#d9d0c3;color:#3a3028}
+.b-strat{background:#c8c0f0;color:#1e1060}
+.b-op{background:#b0e0c8;color:#0d3d22}
+.b-coord{background:#f0e4a0;color:#4a3000}
+.b-seg{background:#d8d0c0;color:#2a2218}
+.b-anl{background:#b8d4f5;color:#0f3572}
+.sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.s-dev{background:#2e6da4}.s-gest{background:#9b6000}.s-plan{background:#5a5048}
+.s-esp{background:#6b3fa0}.s-comp{background:#1a7a50}.s-def{background:#7a6e62}.s-closed{background:#8a7d6e}
+.pdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.due-ov{color:#8b1a1a;font-size:9px;flex-shrink:0;font-weight:700}
+.due-ok{color:#5a5048;font-size:9px;flex-shrink:0}
+.blk{display:inline-flex;font-size:9px;padding:2px 7px;border-radius:20px;background:#f0c8c8;color:#6b0f0f;margin-left:4px;font-weight:600}
+.prog-top{display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px;color:#1a1410;font-weight:600}
+.prog-bg{height:5px;background:#c8bfb0;border-radius:3px;overflow:hidden;margin-bottom:4px}
+.prog-fill{height:100%;border-radius:3px}
+.prog-sub{font-size:9px;color:#3a3028}
+.ins-list{display:flex;flex-direction:column;gap:7px}
+.ins{padding:.75rem 1rem;border-radius:8px;border:1px solid #c8bfb0;border-left-width:3px;font-size:11px;line-height:1.7;color:#1a1410;background:#e0d9ce}
+.ins strong{font-weight:700;color:#1a1410}
+.ins-r{border-left-color:#8b1a1a}.ins-b{border-left-color:#1a3a6b}.ins-g{border-left-color:#0d4226}.ins-y{border-left-color:#7a4e00}
+.nwt{font-size:11px;font-weight:700;color:#7a4e00;margin-bottom:8px}
+.header{padding:14px 16px;background:#e8e2d8;border-bottom:1px solid #c8bfb0;display:flex;align-items:center;justify-content:space-between}
+.header-title{font-size:14px;font-weight:700;color:#1a1410}
+.header-sub{font-size:10px;color:#6b5e52;margin-top:2px}
+.last-updated{font-size:10px;color:#6b5e52}
+</style>
+</head>
+<body>
+
+<div id="overlay">
+  <p>Cargando tareas desde ClickUp…</p>
+  <span>Conectando en tiempo real</span>
+  <div class="loader-bar"><div class="loader-inner"></div></div>
+</div>
+
+<div class="header">
+  <div>
+    <div class="header-title">Dashboard Formación y Desarrollo — AESA</div>
+    <div class="header-sub">Formación 2026 · Datos en tiempo real desde ClickUp</div>
+  </div>
+  <div class="last-updated" id="last-updated"></div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="sw('v1')">Vista 1<br><span style="font-size:9px;opacity:.7">Gestión Semanal</span></button>
+  <button class="nav-btn" onclick="sw('v2')">Vista 2<br><span style="font-size:9px;opacity:.7">Estratégico</span></button>
+  <button class="nav-btn" onclick="sw('v3')">Vista 3<br><span style="font-size:9px;opacity:.7">Portafolio</span></button>
+</div>
+
+<div id="v1" class="view active"></div>
+<div id="v2" class="view"></div>
+<div id="v3" class="view"></div>
+
+<script>
+const TOKEN="pk_138089065_CHMAJOHXV7YJB08L9EU77NRR9S6Y39YW";
+const LIST_ID="901323726474";
+const MARIA=112008868, MARISEL=138089065;
+const PROJ_MAP={"chaska":"CHASKA","pdlt":"PDL","formación local":"Formación Local","cable bolting":"Cable Bolting","aprendo con aesa":"Aprendo AESA","desarrollo":"Desarrollo","gestión interna":"Gestión Interna"};
+const PROJ_COLORS={"chaska":"#5b52c8","pdlt":"#0d6e3a","formación local":"#b06a00","cable bolting":"#8b1a1a","aprendo con aesa":"#1a3a6b","desarrollo":"#8b1a5c","gestión interna":"#4a3f35"};
+const TYPE_COLORS={"estratégico":"#4a3fa0","operativo":"#0d6e3a","coordinación":"#b06a00","seguimiento":"#4a3f35","análisis":"#1a3a6b","gestión":"#5a5048"};
+const CLOSED_ST=["Closed","complete"];
+
+function getProj(t){for(const p of Object.keys(PROJ_MAP)){if(t.tags.some(tg=>tg.toLowerCase()===p))return p;}return"gestión interna";}
+function getType(t){const tgs=t.tags.map(x=>x.toLowerCase());if(tgs.includes("estrategica"))return"estratégico";if(tgs.includes("operativo"))return"operativo";if(tgs.includes("coordinación"))return"coordinación";if(tgs.includes("seguimiento"))return"seguimiento";if(tgs.includes("análisis"))return"análisis";return"gestión";}
+function fmtD(ts){if(!ts)return"—";const d=new Date(ts);return`${d.getDate()}/${String(d.getMonth()+1).padStart(2,"0")}`;}
+function sdot(s){const m={"en desarrollo":"s-dev","en gestión":"s-gest","planificado":"s-plan","esperando respuesta":"s-esp","por definir":"s-def","complete":"s-comp","Closed":"s-closed"};return`<span class="sdot ${m[s]||'s-def'}" title="${s}"></span>`;}
+function pbadge(p){if(p==="urgent")return`<span class="badge b-urgent">urgente</span>`;if(p==="high")return`<span class="badge b-high">alta</span>`;if(p==="normal")return`<span class="badge b-normal">normal</span>`;return`<span class="badge b-none">${p||'—'}</span>`;}
+function tbadge(tp){const m={"estratégico":"b-strat","operativo":"b-op","coordinación":"b-coord","seguimiento":"b-seg","análisis":"b-anl"};return`<span class="badge ${m[tp]||'b-none'}">${tp}</span>`;}
+function sw(id){document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".nav-btn")[["v1","v2","v3"].indexOf(id)].classList.add("active");}
+window.sw=sw;
+
+async function loadData(){
+  try{
+    // ClickUp API — fetch all tasks including closed, paginated
+    let allTasks=[], page=0, more=true;
+    while(more){
+      const res=await fetch(`https://api.clickup.com/api/v2/list/${LIST_ID}/task?include_closed=true&subtasks=true&page=${page}`,{
+        headers:{"Authorization":TOKEN}
+      });
+      const data=await res.json();
+      if(data.tasks&&data.tasks.length>0){
+        allTasks=[...allTasks,...data.tasks];
+        more=!data.last_page;
+        page++;
+      } else {more=false;}
+    }
+    if(allTasks.length>0){
+      const tasks=allTasks.map(t=>({
+        id:t.id,
+        name:t.name,
+        status:t.status?.status||"",
+        priority:t.priority?.priority||null,
+        ass:(t.assignees||[]).map(a=>a.id),
+        tags:(t.tags||[]).map(tg=>tg.name),
+        due:t.due_date?Number(t.due_date):null
+      }));
+      const now=new Date();
+      document.getElementById("last-updated").textContent=`Actualizado: ${now.toLocaleDateString('es-PE',{day:'2-digit',month:'short'})} ${now.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})}`;
+      init(tasks);return;
+    }
+  }catch(e){}
+  // fallback snapshot
+  document.getElementById("last-updated").textContent="Datos: snapshot (sin conexión en vivo)";
+  init(snapshot());
+}
+
+function snapshot(){return[
+  {id:"86ahww9n5",name:"Lanzar convocatoria de inscripción SENATI",status:"planificado",priority:"normal",ass:[MARIA],tags:["desarrollo","seguimiento"],due:1781686800000},
+  {id:"86ahbvrph",name:"Consolidar matriz y validación documental de participantes 2025–2026",status:"en desarrollo",priority:"normal",ass:[MARIA],tags:["gestión interna","operativo"],due:1781514000000},
+  {id:"86ahr8qxj",name:"Identificar y evaluar proveedores para capacitación de Shotcrete",status:"en desarrollo",priority:"normal",ass:[MARIA],tags:["análisis","desarrollo"],due:1781254800000},
+  {id:"86ahr072u",name:"Dar seguimiento a confirmación curso Geomecánica con Garrison",status:"esperando respuesta",priority:"normal",ass:[MARIA],tags:["seguimiento","desarrollo"],due:1781254800000},
+  {id:"86aghhk22",name:"Diseñar plan de identificación de personal operativo para sucesión",status:"por definir",priority:"normal",ass:[MARISEL],tags:["estrategica","desarrollo"],due:1781254800000},
+  {id:"86ahww6av",name:"Dar seguimiento a OCs pendientes con Summit",status:"planificado",priority:"normal",ass:[MARIA],tags:["desarrollo","seguimiento"],due:1781082000000},
+  {id:"86ahr8geu",name:"Diseñar presentación y narrativa de kickoff PDL Seguridad + GH con coach",status:"en desarrollo",priority:"urgent",ass:[MARISEL],tags:["pdlt","estrategica"],due:1781082000000},
+  {id:"86ahr8dzx",name:"Redefinir enfoque del rol del líder y estructura metodológica PDL 6 meses",status:"en desarrollo",priority:"urgent",ass:[MARISEL],tags:["pdlt","estrategica"],due:1781082000000},
+  {id:"86ahn0tj0",name:"Actualizar lineamientos de excepciones para Recategorizaciones y CHASKA",status:"en desarrollo",priority:"high",ass:[MARIA],tags:["gestión interna","estrategica"],due:1781082000000},
+  {id:"86ahwxwx9",name:"Armar estrategia y lineamientos para programa FL Marcobre - Minsur",status:"en desarrollo",priority:"urgent",ass:[MARISEL],tags:["formación local","estrategica"],due:1780995600000},
+  {id:"86ahrmgq3",name:"Diseñar estrategia de formación y propuesta económica etapas 2–4 FL JS",status:"en desarrollo",priority:"urgent",ass:[MARISEL],tags:["formación local","estrategica"],due:1780995600000},
+  {id:"86ag33wqm",name:"Actualizar Gantt formación y control actividades",status:"en desarrollo",priority:"normal",ass:[MARIA],tags:["gestión interna","operativo"],due:1780995600000},
+  {id:"86ahv985y",name:"Revisar oferta de cursos disponibles SENATI",status:"en desarrollo",priority:"normal",ass:[MARIA],tags:["desarrollo","seguimiento"],due:1780909200000},
+  {id:"86ahr8r5k",name:"Revisar alternativas de cursos de Excel para Melissa Intor",status:"en desarrollo",priority:"low",ass:[MARISEL],tags:["desarrollo","seguimiento"],due:1780909200000},
+  {id:"86ahkz2c5",name:"Validar procedimientos y evidencias de soporte para auditoría",status:"en gestión",priority:"normal",ass:[MARIA],tags:["seguimiento","gestión interna"],due:1780909200000},
+  {id:"86ah35ruj",name:"Coordinar logística para ejecución del PDLT",status:"en gestión",priority:"high",ass:[MARIA],tags:["coordinación","pdlt"],due:1780909200000},
+  {id:"86ahwr2a7",name:"Gestionar ejecución y seguimiento de evaluaciones CHASKA Jun 2026",status:"planificado",priority:"high",ass:[MARIA],tags:["chaska","seguimiento"],due:1780650000000},
+  {id:"86ahvra2r",name:"Reunión con proyecto para ver avances de Cable Bolting",status:"planificado",priority:"normal",ass:[MARISEL],tags:["coordinación","cable bolting"],due:1780650000000},
+  {id:"86ahvc5q1",name:"Dar seguimiento a OCs pendientes con proveedores SSMA",status:"en gestión",priority:"normal",ass:[MARIA],tags:["seguimiento","desarrollo"],due:1780650000000},
+  {id:"86ahuxan4",name:"Confirmar requerimiento de equipos para alquiler práctica FL JS",status:"en desarrollo",priority:"high",ass:[MARISEL],tags:["seguimiento","formación local"],due:1780650000000},
+  {id:"86ahugtxe",name:"Solicitar evaluaciones de selección de líderes para análisis de GAPs",status:"en desarrollo",priority:"high",ass:[MARIA],tags:["pdlt","seguimiento"],due:1780650000000},
+  {id:"86ahufyf2",name:"Revisar presupuesto y validar pasajes para movimiento de Washi",status:"en desarrollo",priority:"high",ass:[MARISEL],tags:["pdlt","coordinación"],due:1780650000000},
+  {id:"86ahudynp",name:"Operaciones identificar personal a entrenar y Maestro senior",status:"en gestión",priority:"high",ass:[MARISEL],tags:["cable bolting","seguimiento"],due:1780650000000},
+  {id:"86ahq3357",name:"Crear canal WhatsApp Aprendo con AESA Junio",status:"en desarrollo",priority:"normal",ass:[MARIA],tags:["aprendo con aesa","coordinación"],due:1780650000000},
+  {id:"86ahm04k6",name:"Alinear despliegue de Aprendo con AESA con jefaturas GH",status:"en desarrollo",priority:"normal",ass:[MARIA],tags:["coordinación","aprendo con aesa"],due:1780650000000},
+  {id:"86ahvrpk8",name:"Actualizar montos convenios de permanencia según VB de Pilar",status:"en gestión",priority:"normal",ass:[MARIA],tags:["operativo","gestión interna"],due:1780563600000},
+  {id:"86ahudx7q",name:"Ajustar propuesta ejecutiva Cable Bolting para presentación y VB cliente",status:"en desarrollo",priority:"high",ass:[MARISEL],tags:["cable bolting","estrategica"],due:1780563600000},
+  {id:"86ahr8kp1",name:"Identificar y evaluar proveedores para premios CHASKA 2026",status:"en gestión",priority:"urgent",ass:[MARIA],tags:["análisis","chaska"],due:1780563600000},
+  {id:"86ahq2wne",name:"Redefinir indicadores y metas de impacto del PDLT con SSMA y GH",status:"en gestión",priority:"high",ass:[MARIA],tags:["estrategica","pdlt"],due:1780563600000},
+  {id:"86ahq0t7q",name:"Completar formato de capacitación externa de Nancy",status:"en desarrollo",priority:"normal",ass:[MARIA],tags:["operativo","gestión interna"],due:1780563600000},
+  {id:"86aghmmce",name:"Diseñar plan de gestión y aprovechamiento de membresías CREHANA",status:"por definir",priority:"normal",ass:[MARISEL],tags:["desarrollo","estrategica"],due:1780563600000},
+  {id:"86afjbnvm",name:"Diseñar lineamientos del nuevo CHASKA y alinear con Ayrton",status:"por definir",priority:"high",ass:[MARISEL],tags:["chaska","estrategica"],due:1780563600000},
+  {id:"86ahvraza",name:"Alinear y cerrar temario del curso de IA con Luis Solano y Alexander",status:"en gestión",priority:"urgent",ass:[MARIA],tags:["aprendo con aesa","coordinación"],due:1780477200000},
+  {id:"86ahue03c",name:"Dar seguimiento coordinación reunión con Nexa Cable Bolting",status:"esperando respuesta",priority:"high",ass:[MARISEL],tags:["cable bolting","seguimiento"],due:1780477200000},
+  {id:"86ah49eqh",name:"Coordinar gestión y validación OC y pagos UDEP para Lizbeth",status:"en gestión",priority:"normal",ass:[MARIA],tags:["coordinación","desarrollo"],due:1780477200000},
+  {id:"86agg2z3b",name:"Diseñar roadmap y propuesta de siguientes pasos del PCL",status:"por definir",priority:"high",ass:[MARISEL],tags:["desarrollo","estrategica"],due:1780477200000},
+  {id:"86ahr864f",name:"Definir proveedor viable para kickoff y seguimiento PDL 6 meses",status:"esperando respuesta",priority:"urgent",ass:[MARISEL],tags:["pdlt","estrategica"],due:1780390800000},
+  {id:"86ahq3729",name:"Coordinar lanzamiento de evaluaciones CHASKA Jun 2026",status:"en gestión",priority:"urgent",ass:[MARIA],tags:["chaska","coordinación"],due:1780390800000},
+  {id:"86agv5h2h",name:"Hacer seguimiento a Alexander para reunión con Marcobre",status:"Closed",priority:"urgent",ass:[MARISEL],tags:["seguimiento","formación local"],due:1780477200000},
+  {id:"86ahr8hx4",name:"CHASKA unificar y cargar BBDD proyectos en aplicativo",status:"Closed",priority:"urgent",ass:[MARISEL],tags:[],due:1780304400000},
+  {id:"86ahr8e81",name:"CHASKA establecer mejoras en aplicativo",status:"Closed",priority:"urgent",ass:[MARISEL],tags:[],due:1780304400000},
+  {id:"86ahq2q3n",name:"PPT cable bolting Cerro Lindo",status:"Closed",priority:"urgent",ass:[MARISEL],tags:[],due:1780045200000},
+  {id:"86ahqzuu4",name:"Formación Local hablar Joel traspaso Washington",status:"Closed",priority:"urgent",ass:[MARISEL],tags:[],due:1779872400000},
+  {id:"86ahm0ac6",name:"Formación Local enviar Draft costos SR",status:"Closed",priority:"urgent",ass:[MARISEL],tags:[],due:1779872400000},
+  {id:"86ag2gzya",name:"Armar PAC Lima y proyectos",status:"Closed",priority:"urgent",ass:[MARISEL],tags:[],due:1779440400000},
+  {id:"86af42kjm",name:"Realizar informe anual CHASKA 2025",status:"Closed",priority:"urgent",ass:[MARISEL],tags:[],due:1779094800000},
+  {id:"86ahbxqub",name:"Pedir matrices evaluación CHASKA a proyectos",status:"Closed",priority:"urgent",ass:[MARIA],tags:[],due:1778749200000},
+  {id:"86ahctqg4",name:"Seguimiento devolución reembolso gastos CHASKA y PALMA",status:"Closed",priority:"urgent",ass:[MARIA],tags:[],due:1778490000000},
+  {id:"86ahbxrf5",name:"Comunicar nuevo CHASKA a todo el personal",status:"Closed",priority:"high",ass:[MARIA],tags:[],due:1778490000000},
+  {id:"86agv670w",name:"Hacer línea de carrera personal operativo",status:"Closed",priority:"high",ass:[MARISEL],tags:[],due:1777539600000},
+];}
+
+function init(tasks){
+  window._tasks=tasks;
+  document.getElementById("overlay").style.display="none";
+  buildV1(tasks);buildV2(tasks);buildV3(tasks);
+}
+
+function buildV1(tasks){
+  const now=Date.now();
+  const active=tasks.filter(t=>!CLOSED_ST.includes(t.status));
+  const dow=new Date(now).getDay();
+  const mon=new Date(now);mon.setDate(mon.getDate()-(dow===0?6:dow-1));mon.setHours(0,0,0,0);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);sun.setHours(23,59,59,999);
+  const wkT=active.filter(t=>t.due&&t.due>=mon.getTime()&&t.due<=sun.getTime());
+  const urg=active.filter(t=>t.priority==="urgent");
+  const ovd=active.filter(t=>t.due&&t.due<now);
+  const esp=active.filter(t=>t.status==="esperando respuesta");
+  const sinDef=active.filter(t=>t.status==="por definir"||!t.ass||t.ass.length===0||!t.due||t.status==="planificado");
+  const mLoad=active.filter(t=>t.ass&&t.ass.includes(MARIA)).length;
+  const sLoad=active.filter(t=>t.ass&&t.ass.includes(MARISEL)).length;
+  const nwMon=new Date(mon);nwMon.setDate(mon.getDate()+7);
+  const nwSun=new Date(nwMon);nwSun.setDate(nwMon.getDate()+6);nwSun.setHours(23,59,59,999);
+  const nwT=active.filter(t=>t.due&&t.due>=nwMon.getTime()&&t.due<=nwSun.getTime());
+  function sameDay(ts,d){const td=new Date(ts);return td.getDate()===d.getDate()&&td.getMonth()===d.getMonth()&&td.getFullYear()===d.getFullYear();}
+  function pCard(label,init,av,id){
+    const pt=active.filter(t=>t.ass&&t.ass.includes(id));
+    const bt={};pt.forEach(t=>{const tp=getType(t);bt[tp]=(bt[tp]||0)+1;});
+    const tot=pt.length||1;
+    const bars=["estratégico","operativo","coordinación","seguimiento","análisis","gestión"].filter(tp=>bt[tp]);
+    return`<div class="card"><div class="phead"><div class="av ${av}">${init}</div><div><div class="pname">${label}</div></div></div>
+    <div class="pstats"><div><div class="psv">${pt.length}</div><div class="psl">activas</div></div>${bars.slice(0,3).map(tp=>`<div><div class="psv">${bt[tp]}</div><div class="psl">${tp}</div></div>`).join("")}</div>
+    <div class="sbar">${bars.map(tp=>`<div style="width:${Math.round((bt[tp]||0)/tot*100)}%;background:${TYPE_COLORS[tp]||'#555'}"></div>`).join("")}</div>
+    <div class="bleg">${bars.map(tp=>`<span class="bli"><span class="bldot" style="background:${TYPE_COLORS[tp]||'#555'}"></span>${tp} ${bt[tp]}</span>`).join("")}</div></div>`;
+  }
+  let v1f="all";
+  function renderV1tasks(){
+    const cats=["all","Maria","Marisel","urgente","esperando respuesta","estratégico","operativo"];
+    document.getElementById("v1f").innerHTML=cats.map(f=>`<button class="fbtn${f===v1f?" active":""}" onclick="v1sf('${f}')">${f==="all"?"Todas":f}</button>`).join("");
+    let list=active;
+    if(v1f==="Maria")list=list.filter(t=>t.ass&&t.ass.includes(MARIA));
+    else if(v1f==="Marisel")list=list.filter(t=>t.ass&&t.ass.includes(MARISEL));
+    else if(v1f==="urgente")list=list.filter(t=>t.priority==="urgent");
+    else if(v1f==="esperando respuesta")list=list.filter(t=>t.status==="esperando respuesta");
+    else if(v1f==="estratégico")list=list.filter(t=>getType(t)==="estratégico");
+    else if(v1f==="operativo")list=list.filter(t=>getType(t)==="operativo");
+    list=list.sort((a,b)=>(a.due||9e15)-(b.due||9e15));
+    document.getElementById("v1tasks").innerHTML=list.map(t=>{
+      const isOv=t.due&&t.due<now;
+      const both=t.ass&&t.ass.includes(MARIA)&&t.ass.includes(MARISEL);
+      const dc=both?"#7a4e00":t.ass&&t.ass.includes(MARISEL)?"#1e1060":"#1a5c3a";
+      return`<div class="trow">${sdot(t.status)}<span class="pdot" style="background:${dc}"></span><span class="tname"><a href="https://app.clickup.com/t/${t.id}" target="_blank">${t.name}</a></span>${tbadge(getType(t))}${pbadge(t.priority)}<span class="${isOv?"due-ov":"due-ok"}">${fmtD(t.due)}${isOv?" ⚠":""}</span></div>`;
+    }).join("")||`<div style="font-size:11px;color:#5a5048;padding:.5rem">Sin tareas para este filtro.</div>`;
+  }
+  window.v1sf=f=>{v1f=f;renderV1tasks();};
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d;});
+  const dnames=["LUN","MAR","MIÉ","JUE","VIE","SÁB","DOM"];
+  document.getElementById("v1").innerHTML=`
+  <div class="section"><div class="sec-title">Gestión Semanal Operativa</div>
+    <div class="grid4">${[{l:"Tareas activas semana",v:wkT.length,s:"con fecha esta semana"},{l:"Maria activas",v:mLoad,s:"total asignadas",c:"#0d6e3a"},{l:"Marisel activas",v:sLoad,s:"total asignadas",c:"#1e1060"},{l:"Urgentes activas",v:urg.length,s:"atención inmediata",c:"#8b1a1a"}].map(m=>`<div class="card"><div class="metric-lbl">${m.l}</div><div class="metric-val"${m.c?` style="color:${m.c}"`:""}>${m.v}</div><div class="metric-sub">${m.s}</div></div>`).join("")}</div>
+    <div class="grid4" style="margin-top:8px">${[{l:"Vencidas",v:ovd.length,s:"superaron fecha",c:"#8b3a00"},{l:"Esperando respuesta",v:esp.length,s:"dependen de terceros",c:"#1a3a6b"},{l:"Sin definir",v:sinDef.length,s:"sin responsable / fecha / inicio",c:"#4a2e6b"},{l:"En desarrollo",v:active.filter(t=>t.status==="en desarrollo").length,s:"actualmente activas",c:"#0d4226"}].map(m=>`<div class="card"><div class="metric-lbl">${m.l}</div><div class="metric-val"${m.c?` style="color:${m.c}"`:""}>${m.v}</div><div class="metric-sub">${m.s}</div></div>`).join("")}</div>
+  </div>
+  <div class="section"><div class="sec-title">Carga esta semana por persona</div><div class="grid2">${pCard("Maria Merino","MM","av-m",MARIA)}${pCard("Marisel Echevarría","ME","av-s",MARISEL)}</div></div>
+  <div class="section"><div class="sec-title">Calendario de la semana</div>
+    <div class="cal-leg"><span><span class="ldot" style="background:#1a5c3a"></span>Maria</span><span><span class="ldot" style="background:#1e1060"></span>Marisel</span><span><span class="ldot" style="background:#7a4e00"></span>Compartida</span></div>
+    <div class="cal-grid">${days.map((day,i)=>{const isT=sameDay(now,day);const dt=active.filter(t=>t.due&&sameDay(t.due,day));const th=dt.slice(0,4).map(t=>{const both=t.ass&&t.ass.includes(MARIA)&&t.ass.includes(MARISEL);const cls=both?"ct-sh":t.ass&&t.ass.includes(MARISEL)?"ct-s":"ct-m";const sn=t.name.length>26?t.name.slice(0,24)+"…":t.name;return`<div class="ct ${cls}" title="${t.name}">${sn}</div>`;}).join("")+(dt.length>4?`<div style="font-size:9px;color:#5a5048">+${dt.length-4}</div>`:"");return`<div class="cal-day${isT?" today":""}"><div class="cal-dh">${dnames[i]}</div><div class="cal-dn">${day.getDate()}</div>${th||'<div style="font-size:9px;color:#8a7d6e">—</div>'}</div>`;}).join("")}</div>
+  </div>
+  <div class="section"><div class="sec-title">Tareas activas — todas</div><div class="card"><div class="frow" id="v1f"></div><div id="v1tasks"></div></div></div>
+  <div class="section"><div class="sec-title">Próxima semana — atención anticipada</div>
+    <div class="card"><div class="nwt">⚡ Tareas que vencen la próxima semana (${nwT.length}) — actúa ahora</div>
+    ${nwT.sort((a,b)=>(a.due||0)-(b.due||0)).map(t=>{const isEsp=t.status==="esperando respuesta";const dc=t.ass&&t.ass.includes(MARISEL)&&!(t.ass&&t.ass.includes(MARIA))?"#1e1060":"#1a5c3a";return`<div class="trow">${sdot(t.status)}<span class="pdot" style="background:${dc}"></span><span class="tname">${t.name}</span>${pbadge(t.priority)}${isEsp?`<span class="blk">⏳ esperando</span>`:""}<span class="due-ok">${fmtD(t.due)}</span></div>`;}).join("")||'<div style="font-size:11px;color:#5a5048">Sin tareas la próxima semana.</div>'}
+    ${esp.length>0?`<div style="margin-top:10px;font-size:10px;font-weight:700;color:#7a4e00">🔒 ${esp.length} tareas bloqueadas por respuesta de terceros</div>`:""}</div>
+  </div>
+  <div class="section"><div class="sec-title">Insights semanales</div><div class="ins-list">${[
+    {c:"ins-r",t:`<strong>${ovd.length} tareas con fecha vencida</strong> — PDL y CHASKA concentran la mayor parte. Requieren acción inmediata o reprogramación.`},
+    {c:"ins-y",t:`<strong>${esp.length} tareas bloqueadas esperando respuesta</strong> — Cable Bolting (Nexa), PDL (proveedor). Pueden trabar la semana siguiente si no se activan hoy.`},
+    {c:"ins-b",t:`<strong>Distribución asimétrica de carga</strong> — Maria tiene más tareas (${mLoad}) de ejecución rápida. Marisel menos tareas (${sLoad}) pero de mayor carga cognitiva.`},
+    {c:"ins-g",t:`<strong>Próxima semana: ${nwT.length} tareas vencen</strong> — Revisar PDL, FL y CHASKA para no llegar tarde.`},
+  ].map(i=>`<div class="ins ${i.c}">${i.t}</div>`).join("")}</div></div>`;
+  renderV1tasks();
+}
+
+function buildV2(tasks){
+  const now=Date.now();
+  const active=tasks.filter(t=>!CLOSED_ST.includes(t.status));
+  const strat=active.filter(t=>getType(t)==="estratégico");
+  const sm=strat.filter(t=>t.ass&&t.ass.includes(MARIA));
+  const ss=strat.filter(t=>t.ass&&t.ass.includes(MARISEL));
+  const sBlk=strat.filter(t=>t.status==="esperando respuesta");
+  const sVB=strat.filter(t=>["por definir","planificado"].includes(t.status));
+  const sDev=strat.filter(t=>["en desarrollo","en gestión"].includes(t.status));
+  function stratCard(label,init,av,st){
+    const bp={};st.forEach(t=>{const p=getProj(t);bp[p]=(bp[p]||0)+1;});
+    const tot=st.length||1;
+    return`<div class="card"><div class="phead"><div class="av ${av}">${init}</div><div><div class="pname">${label}</div><div class="prole">Carga estratégica</div></div></div>
+    <div class="pstats"><div><div class="psv" style="color:#4a3fa0">${st.length}</div><div class="psl">estratégicas</div></div><div><div class="psv" style="color:#8b1a1a">${st.filter(t=>t.priority==="urgent").length}</div><div class="psl">urgentes</div></div><div><div class="psv">${st.filter(t=>t.status==="en desarrollo").length}</div><div class="psl">en diseño</div></div></div>
+    ${Object.entries(bp).sort((a,b)=>b[1]-a[1]).map(([p,n])=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><div style="flex:1;height:4px;background:#c8bfb0;border-radius:2px;overflow:hidden"><div style="width:${Math.round(n/tot*100)}%;height:100%;background:${PROJ_COLORS[p]||'#555'}"></div></div><span style="font-size:9px;color:#1a1410;font-weight:500;width:110px">${PROJ_MAP[p]||p} (${n})</span></div>`).join("")}</div>`;
+  }
+  let v2p="all";
+  const projList=["all",...[...new Set(strat.map(getProj))]];
+  function renderV2tasks(){
+    document.getElementById("v2f").innerHTML=projList.map(p=>`<button class="fbtn${p===v2p?" active":""}" onclick="v2sp('${p}')">${p==="all"?"Todos":PROJ_MAP[p]||p}</button>`).join("");
+    const list=(v2p==="all"?strat:strat.filter(t=>getProj(t)===v2p)).sort((a,b)=>(a.due||9e15)-(b.due||9e15));
+    document.getElementById("v2tasks").innerHTML=list.map(t=>{
+      const isOv=t.due&&t.due<now;const isBlk=t.status==="esperando respuesta"||t.status==="por definir";
+      const dc=t.ass&&t.ass.includes(MARISEL)&&!(t.ass&&t.ass.includes(MARIA))?"#1e1060":"#1a5c3a";
+      const proj=getProj(t);
+      return`<div class="trow">${sdot(t.status)}<span class="pdot" style="background:${dc}"></span><span class="tname"><a href="https://app.clickup.com/t/${t.id}" target="_blank">${t.name}</a></span><span class="badge" style="background:${PROJ_COLORS[proj]}22;color:${PROJ_COLORS[proj]};font-size:9px;padding:2px 7px;border-radius:20px;font-weight:600">${PROJ_MAP[proj]||proj}</span>${pbadge(t.priority)}${isBlk?`<span class="blk">bloqueada</span>`:""}<span class="${isOv?"due-ov":"due-ok"}">${fmtD(t.due)}${isOv?" ⚠":""}</span></div>`;
+    }).join("");
+  }
+  window.v2sp=p=>{v2p=p;renderV2tasks();};
+  const sUrgOv=strat.filter(t=>t.priority==="urgent"&&t.due&&t.due<now);
+  document.getElementById("v2").innerHTML=`
+  <div class="section"><div class="sec-title">Dashboard Estratégico</div>
+    <div class="grid3">${[{l:"Tareas estratégicas activas",v:strat.length,s:"total alta complejidad",c:"#4a3fa0"},{l:"Carga cognitiva Maria",v:sm.length,s:"tareas estratégicas",c:"#0d6e3a"},{l:"Carga cognitiva Marisel",v:ss.length,s:"tareas estratégicas",c:"#1e1060"},{l:"En construcción / diseño",v:sDev.length,s:"en desarrollo activo"},{l:"Esperando VB / validación",v:sVB.length,s:"detenidas por aprobación",c:"#8b3a00"},{l:"Bloqueadas — esperando",v:sBlk.length,s:"dependen de terceros",c:"#8b1a1a"}].map(m=>`<div class="card"><div class="metric-lbl">${m.l}</div><div class="metric-val"${m.c?` style="color:${m.c}"`:""}>${m.v}</div><div class="metric-sub">${m.s}</div></div>`).join("")}</div>
+  </div>
+  <div class="section"><div class="sec-title">Carga cognitiva por persona</div><div class="grid2">${stratCard("Maria Merino","MM","av-m",sm)}${stratCard("Marisel Echevarría","ME","av-s",ss)}</div></div>
+  <div class="section"><div class="sec-title">Tareas estratégicas activas</div><div class="card"><div class="frow" id="v2f"></div><div id="v2tasks"></div></div></div>
+  <div class="section"><div class="sec-title">Insights estratégicos</div><div class="ins-list">${[
+    {c:"ins-r",t:`<strong>${sUrgOv.length} iniciativas estratégicas urgentes y vencidas</strong> — PDL y Formación Local tienen trabajo crítico sin avance.`},
+    {c:"ins-b",t:`<strong>Marisel concentra el ${strat.length>0?Math.round(ss.length/strat.length*100):0}% de la carga estratégica</strong> — PDL, FL y Cable Bolting son sus tres frentes simultáneos.`},
+    {c:"ins-y",t:`<strong>${sVB.length} tareas estratégicas bloqueadas por validación</strong> — Sin VB de Pilar o Ayrton, no avanzan.`},
+    {c:"ins-g",t:`<strong>CHASKA y Aprendo AESA tienen trabajo estratégico avanzado</strong> — Solo necesitan cierre y validación esta semana.`},
+  ].map(i=>`<div class="ins ${i.c}">${i.t}</div>`).join("")}</div></div>`;
+  renderV2tasks();
+}
+
+function buildV3(tasks){
+  const now=Date.now();
+  const active=tasks.filter(t=>!CLOSED_ST.includes(t.status));
+  const projects=Object.keys(PROJ_MAP);
+  const blocked=active.filter(t=>t.status==="esperando respuesta"||t.status==="por definir");
+  const activeProjs=projects.filter(p=>active.some(t=>t.tags&&t.tags.some(tg=>tg.toLowerCase()===p)));
+  const mostUrgP=projects.reduce((a,p)=>{const n=active.filter(t=>t.tags&&t.tags.some(tg=>tg.toLowerCase()===p)&&t.priority==="urgent").length;return n>a.n?{p,n}:a;},{p:"",n:0});
+  const progHtml=projects.map(p=>{
+    const pAll=tasks.filter(t=>t.tags&&t.tags.some(tg=>tg.toLowerCase()===p));
+    const pCl=pAll.filter(t=>CLOSED_ST.includes(t.status)).length;
+    const pAct=pAll.filter(t=>!CLOSED_ST.includes(t.status));
+    const pct=pAll.length>0?Math.round(pCl/pAll.length*100):0;
+    const urgN=pAct.filter(t=>t.priority==="urgent").length;
+    const blkN=pAct.filter(t=>t.status==="esperando respuesta").length;
+    const col=PROJ_COLORS[p]||"#555";
+    return`<div class="card"><div class="prog-top"><span>${PROJ_MAP[p]}</span><span style="color:${col}">${pct}%</span></div><div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div><div class="prog-sub">${pCl} cerradas · ${pAct.length} activas · ${pAll.length} total${urgN>0?` · <span style="color:#8b1a1a;font-weight:700">${urgN} urgentes</span>`:""}${blkN>0?` · <span style="color:#8b3a00;font-weight:700">${blkN} bloqueadas</span>`:""}</div></div>`;
+  }).join("");
+  const tipoHtml=projects.map(p=>{
+    const pAct=active.filter(t=>t.tags&&t.tags.some(tg=>tg.toLowerCase()===p));
+    if(!pAct.length)return`<div class="card"><div class="prog-top"><span>${PROJ_MAP[p]}</span><span style="color:#8a7d6e">sin activas</span></div></div>`;
+    const types={};pAct.forEach(t=>{const tp=getType(t);types[tp]=(types[tp]||0)+1;});
+    const tot=pAct.length;
+    const bars=Object.entries(types).sort((a,b)=>b[1]-a[1]);
+    return`<div class="card"><div class="prog-top"><span>${PROJ_MAP[p]}</span><span style="font-size:10px;color:#5a5048">${tot} activas</span></div><div class="sbar" style="margin-bottom:6px">${bars.map(([tp,n])=>`<div style="width:${Math.round(n/tot*100)}%;background:${TYPE_COLORS[tp]||'#555'}" title="${tp}: ${n}"></div>`).join("")}</div><div style="display:flex;flex-wrap:wrap;gap:5px">${bars.map(([tp,n])=>`<span style="font-size:9px;color:${TYPE_COLORS[tp]||'#3a3028'};font-weight:600">${tp} ${n}</span>`).join("")}</div></div>`;
+  }).join("");
+  const mostAct=projects.reduce((a,p)=>{const n=active.filter(t=>t.tags&&t.tags.some(tg=>tg.toLowerCase()===p)).length;return n>a.n?{p,n}:a;},{p:"",n:0});
+  const mostOp=projects.reduce((a,p)=>{const tsk=active.filter(t=>t.tags&&t.tags.some(tg=>tg.toLowerCase()===p));const n=tsk.filter(t=>["operativo","seguimiento"].includes(getType(t))).length;return n>a.n?{p,n}:a;},{p:"",n:0});
+  document.getElementById("v3").innerHTML=`
+  <div class="section"><div class="sec-title">Portafolio de Proyectos</div>
+    <div class="grid3">${[{l:"Proyectos activos",v:activeProjs.length,s:"con tareas en movimiento"},{l:"Mayor riesgo urgente",v:PROJ_MAP[mostUrgP.p]||"—",s:`${mostUrgP.n} urgentes`,c:"#8b1a1a",sm:true},{l:"Tareas bloqueadas",v:blocked.length,s:"esperando o sin definir",c:"#8b3a00"}].map(m=>`<div class="card"><div class="metric-lbl">${m.l}</div><div class="metric-val" style="font-size:${m.sm?"16px":"22px"};${m.c?`color:${m.c}`:""}">${m.v}</div><div class="metric-sub">${m.s}</div></div>`).join("")}</div>
+  </div>
+  <div class="section"><div class="sec-title">Avance y composición por proyecto</div><div class="grid2">${progHtml}</div></div>
+  <div class="section"><div class="sec-title">Distribución de tipo de trabajo por proyecto</div><div class="grid2">${tipoHtml}</div></div>
+  <div class="section"><div class="sec-title">Insights de portafolio</div><div class="ins-list">${[
+    {c:"ins-b",t:`<strong>${PROJ_MAP[mostAct.p]||"—"} es el proyecto con más movimiento activo</strong> — Requiere mayor atención de coordinación esta semana.`},
+    {c:"ins-r",t:`<strong>${PROJ_MAP[mostUrgP.p]||"—"} concentra el mayor riesgo</strong> con ${mostUrgP.n} tareas urgentes. Si alguna se traba, impacta el kickoff del programa.`},
+    {c:"ins-y",t:`<strong>${PROJ_MAP[mostOp.p]||"—"} es donde más tiempo administrativo se está yendo</strong> — Evaluar si algunas tareas se pueden delegar.`},
+    {c:"ins-g",t:`<strong>Cable Bolting y Formación Local tienen el mayor porcentaje de trabajo estratégico sin cierre</strong> — Definir prioridad de VB esta semana.`},
+  ].map(i=>`<div class="ins ${i.c}">${i.t}</div>`).join("")}</div></div>`;
+}
+
+loadData();
+</script>
+</body>
+</html>
